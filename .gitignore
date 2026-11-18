@@ -1,0 +1,37 @@
+# =========================
+# Project Tirith Master .gitignore
+# =========================
+
+# --- Security & Environments (CRITICAL) ---
+.env
+.env.*
+!.env.example
+venv/
+env/
+
+# --- Python / Backend ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+alembic.ini.backup
+
+# --- Node / Frontend ---
+node_modules/
+dist/
+dist-ssr/
+.pnp
+.pnp.js
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+
+# --- OS & Editor ---
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo

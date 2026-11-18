@@ -1,0 +1,65 @@
+# /docker-compose.yml
+name: project-tirith
+
+services:
+  # --- 1. POSTGRESQL DATABASE ---
+  db:
+    image: postgres:15
+    container_name: tirith-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tirith
+    volumes:
+      - tirith_db_data:/var/lib/postgresql/data
+
+  # --- 2. FASTAPI WEB SERVER ---
+  api:
+    image: tirith-backend:latest
+    container_name: tirith-api
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    # Overrides the local .env to route network traffic to the db container
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/tirith
+
+  # --- 3. ASYNCHRONOUS BACKGROUND WORKER ---
+  worker:
+    # Reuses the exact same image as the API to save build time and space
+    image: tirith-backend:latest
+    container_name: tirith-worker
+    build: ./backend
+    command: python worker.py
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/tirith
+
+  # --- 4. REACT FRONTEND ---
+  frontend:
+    image: tirith-frontend:latest
+    container_name: tirith-ui
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Prevents your local Windows node_modules from overwriting the Linux container's modules
+      - /app/node_modules
+
+volumes:
+  tirith_db_data:
